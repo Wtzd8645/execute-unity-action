@@ -1,0 +1,54 @@
+name: "Build Unity Project Action"
+description: "Used to building an Unity project with cross-platform support."
+author: "Neo Chen"
+
+inputs:
+  language:
+    description: "Scripting language used for the build script. Set to 'javascript' or 'python' based on the preferred language for executing the build."
+    default: "javascript"
+  unity_install_dir:
+    description: "Root directory to locate Unity installations. Optional; defaults to the OS-specific Unity installation path if omitted. Avoid specifying a direct path to a specific Unity version."
+  project_path:
+    description: "Absolute path to the Unity project directory that you want to build. This should include 'ProjectSettings' folder."
+    required: true
+  build_method:
+    description: "The fully qualified name of the Unity build method to execute, typically in the format 'Namespace.Class.Method'. This method will be invoked to start the build process."
+    required: true
+  build_version:
+    description: "Version identifier for the build. This is used to label the generated logs."
+    default: "0"
+  log_dir:
+    description: "Directory where build log files should be stored. If not specified, the default output directory will be used."
+  log_name:
+    description: "Base name for the log file generated during the build. If not specified, a default name will be used."
+    default: "build_output"
+  custom_options:
+    description: "Additional command-line options for Unity, separated by spaces. Options starting with '-' are treated as keys."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      if: ${{ inputs.language == 'javascript' }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: 'latest'
+
+    - name: Setup Python
+      if: ${{ inputs.language == 'python' }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+
+    - name: Build Unity Project via JavaScript
+      if: ${{ inputs.language == 'javascript' }}
+      env:
+        unity_install_dir: ${{ inputs.unity_install_dir }}
+        project_path: ${{ inputs.project_path }}
+        build_method: ${{ inputs.build_method }}
+        build_version: ${{ inputs.build_version }}
+        log_dir: ${{ inputs.log_dir }}
+        log_name: ${{ inputs.log_name }}
+        custom_options: ${{ inputs.custom_options }}
+      shell: ${{ runner.os != 'Windows' && 'bash' || 'powershell' }}
+      run: node ${{ github.action_path }}/build-unity-project.js
