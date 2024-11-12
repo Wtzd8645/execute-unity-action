@@ -3,28 +3,28 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { platform } from 'os';
 import { join } from 'path';
 
-async function main() {
+function buildUnityProject() {
   try {
     const projectPath = process.env.project_path;
     console.log(`Unity project path used: ${projectPath}`);
 
-    const version = getUnityVersion(projectPath);
-    console.log(`Unity version used: ${version}`);
+    const unityVer = getUnityVersion(projectPath);
+    console.log(`Unity version used: ${unityVer}`);
 
     const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
-    const unityExecutable = getUnityExecutable(unityInstallDir, version);
+    const unityExecutable = getUnityExecutable(unityInstallDir, unityVer);
     console.log(`Executable: ${unityExecutable}`);
 
     const logPath = join(process.env.log_dir, `${process.env.log_name}_${process.env.build_version}.log`);
     const args = getBuildArguments(projectPath, logPath);
     console.log("Arguments:", args.join(" "));
-    executeUnityBuild(`"${unityExecutable}"`, args, projectPath);
+    executeUnityBuild(unityExecutable, args, projectPath);
 
     console.log("Unity Build Log:");
     const log = readFileSync(join(projectPath, logPath), 'utf-8');
     console.log(log);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(error.message);
     process.exit(1);
   }
 }
@@ -37,7 +37,7 @@ function getUnityVersion(unityProjectPath) {
     return versionLine.split(' ')[1].trim();
 
   } catch (error) {
-    throw new Error('Failed to parse project version.');
+    throw new Error(`Failed to parse project version.\n ${error.message}`);
   }
 }
 
@@ -54,14 +54,14 @@ function getUnityInstallDir(installDir) {
     case 'linux':
       return "/opt/";
     default:
-      throw new Error('Unsupported platform');
+      throw new Error('Unsupported platform.');
   }
 }
 
 function getUnityExecutable(installDir, version) {
   const unityDir = findUnityDirectory(installDir, version);
   if (!unityDir) {
-    console.error("Unable to find the corresponding Unity version installation folder")
+    console.error("Unable to find the corresponding Unity version installation folder.")
     return null;
   }
 
@@ -76,30 +76,32 @@ function getUnityExecutable(installDir, version) {
   return null;
 }
 
-function findUnityDirectory(dir, version) {
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch (error) {
-    if (error.code === 'EPERM' || error.code === 'EACCES') {
-      return null;
-    }
-    throw error;
-  }
+function findUnityDirectory(dir, unityVer) {
+  let queue = [dir];
+  while (queue.length > 0) {
+    const currDir = queue.shift();
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-
-    if (entry.name.includes(version)) {
-      return join(dir, entry.name);
+    let entries;
+    try {
+      entries = readdirSync(currDir, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === 'EPERM' || error.code === 'EACCES') {
+        continue;
+      }
+      throw error;
     }
 
-    const subDir = join(dir, entry.name);
-    const result = findUnityDirectory(subDir, version);
-    if (result) {
-      return result;
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i];
+      if (!entry.isDirectory()) {
+        continue;
+      }
+
+      if (entry.name.includes(unityVer)) {
+        return join(currDir, entry.name);
+      }
+
+      queue.push(join(currDir, entry.name));
     }
   }
   return null;
@@ -149,9 +151,10 @@ function getBuildArguments(projectPath, logPath) {
 
 function executeUnityBuild(executable, args, workingDir) {
   console.log('Start Unity build.');
+  executable = `"${executable}"`;
   const result = spawnSync(executable, args, { cwd: workingDir, stdio: 'inherit', shell: true });
   if (result.error) {
-    console.error(`Process failed with error: ${result.error.message}`);
+    console.error(`Process failed. ${result.error.message}`);
     process.exit(1);
   }
 
@@ -161,4 +164,4 @@ function executeUnityBuild(executable, args, workingDir) {
   }
 }
 
-main();
+buildUnityProject();

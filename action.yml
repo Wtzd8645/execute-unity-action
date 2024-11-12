@@ -3,9 +3,6 @@ description: "Used to building an Unity project with cross-platform support."
 author: "Neo Chen"
 
 inputs:
-  language:
-    description: "Scripting language used for the build script. Set to 'javascript' or 'python' based on the preferred language for executing the build."
-    default: "javascript"
   unity_install_dir:
     description: "Root directory to locate Unity installations. Optional; defaults to the OS-specific Unity installation path if omitted. Avoid specifying a direct path to a specific Unity version."
   project_path:
@@ -29,19 +26,11 @@ runs:
   using: "composite"
   steps:
     - name: Setup Node.js
-      if: ${{ inputs.language == 'javascript' }}
       uses: actions/setup-node@v3
       with:
         node-version: 'latest'
 
-    - name: Setup Python
-      if: ${{ inputs.language == 'python' }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
-
-    - name: Build Unity Project via JavaScript
-      if: ${{ inputs.language == 'javascript' }}
+    - name: Build Unity Project
       env:
         unity_install_dir: ${{ inputs.unity_install_dir }}
         project_path: ${{ inputs.project_path }}
@@ -50,5 +39,5 @@ runs:
         log_dir: ${{ inputs.log_dir }}
         log_name: ${{ inputs.log_name }}
         custom_options: ${{ inputs.custom_options }}
-      shell: ${{ runner.os != 'Windows' && 'bash' || 'powershell' }}
+      shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
       run: node ${{ github.action_path }}/build-unity-project.js
