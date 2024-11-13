@@ -4,7 +4,7 @@ author: "Neo Chen"
 
 inputs:
   unity_install_dir:
-    description: "Root directory to locate Unity installations. Optional; defaults to the OS-specific Unity installation path if omitted. Avoid specifying a direct path to a specific Unity version."
+    description: "Root directory to locate Unity installations. Defaults to the OS-specific Unity installation path. Avoid specifying a direct path to a specific Unity version."
   project_path:
     description: "Absolute path to the Unity project directory that you want to build. This should include 'ProjectSettings' folder."
     required: true
@@ -12,15 +12,15 @@ inputs:
     description: "The fully qualified name of the Unity build method to execute, typically in the format 'Namespace.Class.Method'. This method will be invoked to start the build process."
     required: true
   build_version:
-    description: "Version identifier for the build. This is used to label the generated logs."
+    description: "Version number for the build. This is used to label the generated logs."
   output_dir:
-    description: "Relative path to the directory where the build output will be stored. If not specified, the build output will be stored in the project directory."
+    description: "Relative path to the project_path where the build output will be stored. If not specified, the build output will be stored in the project directory."
     default: "Build/Releases"
   log_name:
     description: "Base name for the log file generated during the build. If not specified, a default name will be used."
     default: "build_log"
   custom_options:
-    description: "Additional command-line options for Unity, separated by spaces. Options starting with '-' are treated as keys."
+    description: "Additional command line arguments passed to Unity. Each parameter should start with a dash. If an argument requires a value, place the value directly after the argument, separated by a space."
 
 runs:
   using: "composite"
