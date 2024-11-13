@@ -15,7 +15,9 @@ function buildUnityProject() {
     const unityExecutable = getUnityExecutable(unityInstallDir, unityVer);
     console.log(`Executable: ${unityExecutable}`);
 
-    const logPath = join(process.env.log_dir, `${process.env.log_name}_${process.env.build_version}.log`);
+    const buildVer = process.env.build_version || new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-');
+    const logName = process.env.log_name ? `${process.env.log_name}_${buildVer}.log` : `build_log_${buildVer}.log`;
+    const logPath = process.env.output_dir ? join(process.env.output_dir, logName) : logName;
     const args = getBuildArguments(projectPath, logPath);
     console.log("Arguments:", args.join(" "));
     executeUnityBuild(unityExecutable, args, projectPath);
@@ -29,13 +31,12 @@ function buildUnityProject() {
   }
 }
 
-function getUnityVersion(unityProjectPath) {
+function getUnityVersion(projectPath) {
   try {
-    const versionFilePath = join(unityProjectPath, 'ProjectSettings', 'ProjectVersion.txt');
+    const versionFilePath = join(projectPath, 'ProjectSettings', 'ProjectVersion.txt');
     const versionFileContent = readFileSync(versionFilePath, 'utf-8');
     const versionLine = versionFileContent.split('\n').find(line => line.includes('m_EditorVersion:'));
     return versionLine.split(' ')[1].trim();
-
   } catch (error) {
     throw new Error(`Failed to parse project version.\n ${error.message}`);
   }
@@ -130,8 +131,8 @@ function findUnityExecutable(unityDir, executableName) {
 
 function getBuildArguments(projectPath, logPath) {
   const args = [
-    '-batchmode',
     '-quit',
+    '-batchmode',
     `-projectPath ${projectPath}`,
     `-executeMethod ${process.env.build_method}`,
     `-logFile ${logPath}`

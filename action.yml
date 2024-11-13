@@ -1,5 +1,5 @@
 name: "Build Unity Project Action"
-description: "Used to building an Unity project with cross-platform support."
+description: "Used for building an Unity project. Supports cross-platform."
 author: "Neo Chen"
 
 inputs:
@@ -13,12 +13,12 @@ inputs:
     required: true
   build_version:
     description: "Version identifier for the build. This is used to label the generated logs."
-    default: "0"
-  log_dir:
-    description: "Directory where build log files should be stored. If not specified, the default output directory will be used."
+  output_dir:
+    description: "Relative path to the directory where the build output will be stored. If not specified, the build output will be stored in the project directory."
+    default: "Build/Releases"
   log_name:
     description: "Base name for the log file generated during the build. If not specified, a default name will be used."
-    default: "build_output"
+    default: "build_log"
   custom_options:
     description: "Additional command-line options for Unity, separated by spaces. Options starting with '-' are treated as keys."
 
@@ -36,7 +36,7 @@ runs:
         project_path: ${{ inputs.project_path }}
         build_method: ${{ inputs.build_method }}
         build_version: ${{ inputs.build_version }}
-        log_dir: ${{ inputs.log_dir }}
+        output_dir: ${{ inputs.output_dir }}
         log_name: ${{ inputs.log_name }}
         custom_options: ${{ inputs.custom_options }}
       shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
