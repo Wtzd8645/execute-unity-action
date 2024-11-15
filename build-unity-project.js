@@ -1,9 +1,9 @@
-import { spawnSync } from 'child_process';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { spawn } from 'child_process';
+import { createWriteStream, existsSync, readdirSync, readFileSync } from 'fs';
 import { platform } from 'os';
 import { join } from 'path';
 
-function buildUnityProject() {
+async function buildUnityProject() {
   try {
     const projectPath = process.env.project_path;
     console.log(`Unity project path used: ${projectPath}`);
@@ -13,18 +13,15 @@ function buildUnityProject() {
 
     const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
     const unityExecutable = getUnityExecutable(unityInstallDir, unityVer);
-    console.log(`Executable: ${unityExecutable}`);
+    console.log(`Unity Executable: ${unityExecutable}`);
 
-    const buildVer = process.env.build_version || new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-');
-    const logName = process.env.log_name ? `${process.env.log_name}_${buildVer}.log` : `build_log_${buildVer}.log`;
-    const logPath = process.env.output_dir ? join(process.env.output_dir, logName) : logName;
-    const args = getBuildArguments(projectPath, logPath);
+    const args = getBuildArguments(projectPath);
     console.log("Arguments:", args.join(" "));
-    executeUnityBuild(unityExecutable, args, projectPath);
 
-    console.log("Unity Build Log:");
-    const log = readFileSync(join(projectPath, logPath), 'utf-8');
-    console.log(log);
+    const logName = process.env.log_name || "build_output.log";
+    const logPath = process.env.log_dir ? join(process.env.log_dir, logName) : logName;
+    const result = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
+    process.exit(result);
   } catch (error) {
     console.error(error.message);
     process.exit(1);
@@ -72,7 +69,7 @@ function getUnityExecutable(installDir, version) {
   } else if (currPlatform === 'darwin') {
     return findUnityExecutable(unityDir, 'Unity.app/Contents/MacOS/Unity');
   } else if (currPlatform === 'linux') {
-    return findUnityExecutable(unityDir, 'unity-editor/Unity');
+    return findUnityExecutable(unityDir, 'Unity');
   }
   return null;
 }
@@ -129,13 +126,13 @@ function findUnityExecutable(unityDir, executableName) {
   return null;
 }
 
-function getBuildArguments(projectPath, logPath) {
+function getBuildArguments(projectPath) {
   const args = [
-    '-quit',
-    '-batchmode',
+    "-quit",
+    "-batchmode",
     `-projectPath ${projectPath}`,
     `-executeMethod ${process.env.build_method}`,
-    `-logFile ${logPath}`
+    "-logFile -"
   ];
 
   const customOptions = process.env.custom_options || "";
@@ -150,19 +147,44 @@ function getBuildArguments(projectPath, logPath) {
   return args;
 }
 
-function executeUnityBuild(executable, args, workingDir) {
-  console.log('Start Unity build.');
-  executable = `"${executable}"`;
-  const result = spawnSync(executable, args, { cwd: workingDir, stdio: 'inherit', shell: true });
-  if (result.error) {
-    console.error(`Process failed. ${result.error.message}`);
-    process.exit(1);
-  }
+function executeUnityBuild(executable, args, projectPath, logPath) {
+  logPath = join(projectPath, logPath);
 
-  if (result.status !== 0) {
-    console.error(`Process exited with code: ${result.status}`);
-    process.exit(result.status);
-  }
+  console.log(`Creating log file. Path: ${logPath}`);
+  const logFileStream = createWriteStream(logPath, { flags: 'a' });
+
+  console.log("Executing Unity build.");
+  return new Promise((resolve, reject) => {
+    const process = spawn(`"${executable}"`, args, { cwd: projectPath, shell: true });
+
+    process.stdout.on('data', (data) => {
+      const log = data.toString();
+      console.log(log);
+      logFileStream.write(log);
+    });
+
+    process.stderr.on('data', (data) => {
+      const log = data.toString();
+      console.error(log);
+      logFileStream.write(log);
+    });
+
+    process.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Process exited with code: ${code}`);
+      } else {
+        console.log('Unity build completed successfully.');
+      }
+      logFileStream.end();
+      resolve(code);
+    });
+
+    process.on('error', (error) => {
+      console.error(`Process failed: ${error.message}`);
+      logFileStream.end();
+      reject(error);
+    });
+  });
 }
 
 buildUnityProject();

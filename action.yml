@@ -11,14 +11,12 @@ inputs:
   build_method:
     description: "The fully qualified name of the Unity build method to execute, typically in the format 'Namespace.Class.Method'. This method will be invoked to start the build process."
     required: true
-  build_version:
-    description: "Version number for the build. This is used to label the generated logs."
-  output_dir:
+  log_dir:
     description: "Relative path to the project_path where the build output will be stored. If not specified, the build output will be stored in the project directory."
     default: "Build/Releases"
   log_name:
     description: "Base name for the log file generated during the build. If not specified, a default name will be used."
-    default: "build_log"
+    default: "build_output.log"
   custom_options:
     description: "Additional command line arguments passed to Unity. Each parameter should start with a dash. If an argument requires a value, place the value directly after the argument, separated by a space."
 
@@ -35,8 +33,7 @@ runs:
         unity_install_dir: ${{ inputs.unity_install_dir }}
         project_path: ${{ inputs.project_path }}
         build_method: ${{ inputs.build_method }}
-        build_version: ${{ inputs.build_version }}
-        output_dir: ${{ inputs.output_dir }}
+        log_dir: ${{ inputs.log_dir }}
         log_name: ${{ inputs.log_name }}
         custom_options: ${{ inputs.custom_options }}
       shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
