@@ -1,7 +1,9 @@
 import { spawn } from 'child_process';
-import { createWriteStream, existsSync, readdirSync, readFileSync } from 'fs';
+import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
 import { platform } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
+
+buildUnityProject();
 
 async function buildUnityProject() {
   try {
@@ -150,6 +152,10 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
   logPath = join(projectPath, logPath);
 
   console.log(`Creating log file. Path: ${logPath}`);
+  const dirPath = dirname(logPath);
+  if (!existsSync(dirPath)) {
+    mkdirSync(dirPath, { recursive: true });
+  }
   const logFileStream = createWriteStream(logPath, { flags: 'a' });
 
   console.log("Executing Unity build.");
@@ -185,5 +191,3 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
     });
   });
 }
-
-buildUnityProject();
