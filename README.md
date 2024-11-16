@@ -8,8 +8,7 @@ Used for building an Unity project using a specific installed version. Supports 
 - **unity_install_dir (Optional)**:  Root directory where Unity is installed. The action will search within this directory for the Unity version that matches the project’s requirements. Defaults to the OS-specific Unity installation path.
 - **project_path (Required)**: Absolute path to the Unity project directory that you want to build.
 - **build_method (Required)**: The fully qualified name of the Unity build method to execute.
-- **log_dir (Optional)**: Relative path to the project_path where the build output will be stored. Default is "Build/Releases".
-- **log_name (Optional)**: Base name for the build log file. Default is "build_output.log".
+- **log_path (Optional)**: The relative path to project_path for the build log file. Defaults to "Build/Releases/build_output.log".
 - **custom_options (Optional)**: Additional command line arguments passed to Unity. Each parameter should start with a dash. If an argument requires a value, place the value directly after the argument, separated by a space.
 
 ### Usage
@@ -19,7 +18,6 @@ Used for building an Unity project using a specific installed version. Supports 
   with:
     project_path: ${{ github.workspace }}
     build_method: MyGame.Editor.BuildScript.PerformBuild
-    log_dir: Builds
-    log_name: my_build_output
+    log_path: Builds/my_build_output.log
     custom_options: -test -targetPlatform ${{ env.target_platform }}
 ```

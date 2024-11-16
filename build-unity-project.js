@@ -18,8 +18,7 @@ async function buildUnityProject() {
     const args = getBuildArguments(projectPath);
     console.log("Arguments:", args.join(" "));
 
-    const logName = process.env.log_name || "build_output.log";
-    const logPath = process.env.log_dir ? join(process.env.log_dir, logName) : logName;
+    const logPath = process.env.log_path || "Build/Release/build_output.log";
     const result = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
     process.exit(result);
   } catch (error) {
