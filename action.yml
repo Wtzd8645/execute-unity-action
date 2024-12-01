@@ -1,7 +1,6 @@
 name: "Build Unity Project Action"
 description: "Used for building an Unity project. Supports cross-platform."
 author: "Neo Chen"
-
 inputs:
   unity_install_dir:
     description: "Root directory to locate Unity installations. Defaults to the OS-specific Unity installation path. Avoid specifying a direct path to a specific Unity version."
@@ -16,15 +15,13 @@ inputs:
     default: "Build/Releases"
   custom_options:
     description: "Additional command line arguments passed to Unity. Each parameter should start with a dash. If an argument requires a value, place the value directly after the argument, separated by a space."
-
 runs:
   using: "composite"
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 'latest'
-
+        node-version: 'lts/*'
     - name: Build Unity Project
       env:
         unity_install_dir: ${{ inputs.unity_install_dir }}
@@ -33,4 +30,5 @@ runs:
         log_path: ${{ inputs.log_path }}
         custom_options: ${{ inputs.custom_options }}
       shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
-      run: node ${{ github.action_path }}/build-unity-project.js
+      working-directory: ${{ github.action_path }}
+      run: npm run start

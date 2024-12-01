@@ -3,12 +3,11 @@ import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync } f
 import { platform } from 'os';
 import { dirname, join } from 'path';
 
-buildUnityProject();
-
-async function buildUnityProject() {
+async function main() {
   try {
     const projectPath = process.env.project_path;
     console.log(`Unity project path used: ${projectPath}`);
+    process.chdir(projectPath);
 
     const unityVer = getUnityVersion(projectPath);
     console.log(`Unity version used: ${unityVer}`);
@@ -191,3 +190,5 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
     });
   });
 }
+
+main();

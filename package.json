@@ -1,0 +1,17 @@
+{
+  "name": "build-unity-project-action",
+  "version": "1.0.0",
+  "description": "Used for building an Unity project using a specific installed version. Supports cross-platform.",
+  "author": "Neo Chen",
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "actions",
+    "cicd",
+    "unity"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
