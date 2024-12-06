@@ -5,21 +5,24 @@ import { dirname, join } from 'path';
 
 async function main() {
   try {
+    const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
     const projectPath = process.env.project_path;
+    const logPath = process.env.log_path;
+    const buildMethod = process.env.build_method;
+    const customOptions = process.env.custom_options || "";
+
     console.log(`Unity project path used: ${projectPath}`);
     process.chdir(projectPath);
 
     const unityVer = getUnityVersion(projectPath);
     console.log(`Unity version used: ${unityVer}`);
 
-    const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
     const unityExecutable = getUnityExecutable(unityInstallDir, unityVer);
     console.log(`Unity Executable: ${unityExecutable}`);
 
-    const args = getBuildArguments(projectPath);
+    const args = getBuildArguments(projectPath, buildMethod, customOptions);
     console.log("Arguments:", args.join(" "));
 
-    const logPath = process.env.log_path || "Build/Release/build_output.log";
     const result = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
     process.exit(result);
   } catch (error) {
@@ -126,17 +129,16 @@ function findUnityExecutable(unityDir, executableName) {
   return null;
 }
 
-function getBuildArguments(projectPath) {
+function getBuildArguments(projectPath, executeMethod, customOptions) {
   const args = [
     "-quit",
     "-batchmode",
+    "-logFile -",
     `-projectPath ${projectPath}`,
-    `-executeMethod ${process.env.build_method}`,
-    "-logFile -"
+    `-executeMethod ${executeMethod}`
   ];
 
-  const customOptions = process.env.custom_options || "";
-  const tokens = customOptions ? customOptions.split(" ") : [];;
+  const tokens = customOptions ? customOptions.split(" ") : [];
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (token.startsWith("-")) {

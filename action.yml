@@ -7,12 +7,12 @@ inputs:
   project_path:
     description: "Absolute path to the Unity project directory that you want to build. This should include 'ProjectSettings' folder."
     required: true
+  log_path:
+    description: "The relative path to project_path for the build log file. Defaults to \"Build/Releases/build_output.log\""
+    default: "Build/Releases/build_output.log"
   build_method:
     description: "The fully qualified name of the Unity build method to execute, typically in the format 'Namespace.Class.Method'. This method will be invoked to start the build process."
     required: true
-  log_path:
-    description: "The relative path to project_path for the build log file. Defaults to \"Build/Releases/build_output.log\""
-    default: "Build/Releases"
   custom_options:
     description: "Additional command line arguments passed to Unity. Each parameter should start with a dash. If an argument requires a value, place the value directly after the argument, separated by a space."
 runs:
@@ -26,8 +26,8 @@ runs:
       env:
         unity_install_dir: ${{ inputs.unity_install_dir }}
         project_path: ${{ inputs.project_path }}
-        build_method: ${{ inputs.build_method }}
         log_path: ${{ inputs.log_path }}
+        build_method: ${{ inputs.build_method }}
         custom_options: ${{ inputs.custom_options }}
       shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
       working-directory: ${{ github.action_path }}

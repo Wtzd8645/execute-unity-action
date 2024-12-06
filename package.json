@@ -10,6 +10,7 @@
     "cicd",
     "unity"
   ],
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
