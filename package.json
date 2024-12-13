@@ -1,6 +1,6 @@
 {
   "name": "build-unity-project-action",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Used for building an Unity project using a specific installed version. Supports cross-platform.",
   "author": "Neo Chen",
   "license": "MIT",
@@ -10,9 +10,14 @@
     "cicd",
     "unity"
   ],
-  "type": "module",
-  "main": "index.js",
+  "type": "commonjs",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest"
   }
 }

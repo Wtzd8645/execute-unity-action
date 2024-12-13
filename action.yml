@@ -5,10 +5,11 @@ inputs:
   unity_install_dir:
     description: "Root directory to locate Unity installations. Defaults to the OS-specific Unity installation path. Avoid specifying a direct path to a specific Unity version."
   project_path:
-    description: "Absolute path to the Unity project directory that you want to build. This should include 'ProjectSettings' folder."
+    description: "Absolute path to the Unity project directory that you want to build. The path should include 'ProjectSettings' folder."
+    default: "${{ github.workspace }}"
     required: true
   log_path:
-    description: "The relative path to project_path for the build log file. Defaults to \"Build/Releases/build_output.log\""
+    description: 'The relative path to project_path for the build log file. Defaults to "Build/Releases/build_output.log"'
     default: "Build/Releases/build_output.log"
   build_method:
     description: "The fully qualified name of the Unity build method to execute, typically in the format 'Namespace.Class.Method'. This method will be invoked to start the build process."
@@ -21,7 +22,7 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 'lts/*'
+        node-version: "lts/*"
     - name: Build Unity Project
       env:
         unity_install_dir: ${{ inputs.unity_install_dir }}

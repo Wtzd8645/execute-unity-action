@@ -1,48 +1,56 @@
 import { spawn } from 'child_process';
-import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
+import { createWriteStream, Dirent, existsSync, mkdirSync, readdirSync, readFileSync, WriteStream } from 'fs';
 import { platform } from 'os';
 import { dirname, join } from 'path';
 
 async function main() {
   try {
-    const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
-    const projectPath = process.env.project_path;
-    const logPath = process.env.log_path;
-    const buildMethod = process.env.build_method;
-    const customOptions = process.env.custom_options || "";
+    const unityInstallDir: string = getUnityInstallDir(process.env.unity_install_dir);
+    const projectPath: string = process.env.project_path ?? process.cwd();
+    const logPath: string = process.env.log_path ?? 'Build/Releases/build_output.log';
+    const buildMethod: string = process.env.build_method ?? '';
+    const customOptions = process.env.custom_options ?? '';
 
     console.log(`Unity project path used: ${projectPath}`);
     process.chdir(projectPath);
 
-    const unityVer = getUnityVersion(projectPath);
+    const unityVer: string = getUnityVersion(projectPath);
     console.log(`Unity version used: ${unityVer}`);
 
-    const unityExecutable = getUnityExecutable(unityInstallDir, unityVer);
+    const unityExecutable: string = getUnityExecutable(unityInstallDir, unityVer) ?? '';
     console.log(`Unity Executable: ${unityExecutable}`);
 
-    const args = getBuildArguments(projectPath, buildMethod, customOptions);
+    const args: readonly string[] = getBuildArguments(projectPath, buildMethod, customOptions);
     console.log("Arguments:", args.join(" "));
 
-    const result = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
+    const result: number = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
     process.exit(result);
   } catch (error) {
-    console.error(error.message);
+    if (error instanceof Error) {
+      console.error(`Error: ${error.message}`);
+    } else {
+      console.error(`Unknown Error: ${JSON.stringify(error)}`);
+    }
     process.exit(1);
   }
 }
 
-function getUnityVersion(projectPath) {
+function getUnityVersion(projectPath: string) {
   try {
     const versionFilePath = join(projectPath, 'ProjectSettings', 'ProjectVersion.txt');
     const versionFileContent = readFileSync(versionFilePath, 'utf-8');
-    const versionLine = versionFileContent.split('\n').find(line => line.includes('m_EditorVersion:'));
+    const versionLine = versionFileContent.split('\n').find(line => line.includes('m_EditorVersion:')) ?? '';
     return versionLine.split(' ')[1].trim();
   } catch (error) {
-    throw new Error(`Failed to parse project version.\n ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Failed to parse project version. Error: ${error.message}`);
+    } else {
+      throw new Error(`Failed to parse project version. Error: ${JSON.stringify(error)}`);
+    }
   }
 }
 
-function getUnityInstallDir(installDir) {
+function getUnityInstallDir(installDir: string | undefined) {
   if (installDir) {
     return installDir;
   }
@@ -59,11 +67,11 @@ function getUnityInstallDir(installDir) {
   }
 }
 
-function getUnityExecutable(installDir, version) {
+function getUnityExecutable(installDir: string, version: string) {
   const unityDir = findUnityDirectory(installDir, version);
   if (!unityDir) {
     console.error("Unable to find the corresponding Unity version installation folder.")
-    return null;
+    return undefined;
   }
 
   const currPlatform = platform();
@@ -74,19 +82,19 @@ function getUnityExecutable(installDir, version) {
   } else if (currPlatform === 'linux') {
     return findUnityExecutable(unityDir, 'Unity');
   }
-  return null;
+  return undefined;
 }
 
-function findUnityDirectory(dir, unityVer) {
-  let queue = [dir];
+function findUnityDirectory(dir: string, unityVer: string) {
+  let queue: string[] = [dir];
   while (queue.length > 0) {
-    const currDir = queue.shift();
+    const currDir: string = queue.shift() ?? "";
 
     let entries;
     try {
       entries = readdirSync(currDir, { withFileTypes: true });
     } catch (error) {
-      if (error.code === 'EPERM' || error.code === 'EACCES') {
+      if ((error instanceof Error && 'code' in error) && (error.code === 'EPERM' || error.code === 'EACCES')) {
         continue;
       }
       throw error;
@@ -105,32 +113,32 @@ function findUnityDirectory(dir, unityVer) {
       queue.push(join(currDir, entry.name));
     }
   }
-  return null;
+  return undefined;
 }
 
-function findUnityExecutable(unityDir, executableName) {
-  const filePath = join(unityDir, executableName);
+function findUnityExecutable(unityDir: string, executableName: string): string | undefined {
+  const filePath: string = join(unityDir, executableName);
   if (existsSync(filePath)) {
     return filePath;
   }
 
-  const entries = readdirSync(unityDir, { withFileTypes: true });
+  const entries: Dirent[] = readdirSync(unityDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) {
       continue;
     }
 
-    const subDir = join(unityDir, entry.name);
-    const result = findUnityExecutable(subDir, executableName);
+    const subDir: string = join(unityDir, entry.name);
+    const result: string | undefined = findUnityExecutable(subDir, executableName);
     if (result) {
       return result;
     }
   }
-  return null;
+  return undefined;
 }
 
-function getBuildArguments(projectPath, executeMethod, customOptions) {
-  const args = [
+function getBuildArguments(projectPath: string, executeMethod: string, customOptions: string) {
+  const args: string[] = [
     "-quit",
     "-batchmode",
     "-logFile -",
@@ -138,9 +146,9 @@ function getBuildArguments(projectPath, executeMethod, customOptions) {
     `-executeMethod ${executeMethod}`
   ];
 
-  const tokens = customOptions ? customOptions.split(" ") : [];
+  const tokens: string[] = customOptions ? customOptions.split(" ") : [];
   for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
+    const token: string = tokens[i];
     if (token.startsWith("-")) {
       const value = tokens[i + 1] && !tokens[i + 1].startsWith("-") ? tokens[++i] : "";
       args.push(value ? `${token} ${value}` : token);
@@ -149,15 +157,15 @@ function getBuildArguments(projectPath, executeMethod, customOptions) {
   return args;
 }
 
-function executeUnityBuild(executable, args, projectPath, logPath) {
+function executeUnityBuild(executable: string, args: readonly string[] | undefined, projectPath: string, logPath: string): Promise<number> {
   logPath = join(projectPath, logPath);
 
   console.log(`Creating log file. Path: ${logPath}`);
-  const dirPath = dirname(logPath);
+  const dirPath: string = dirname(logPath);
   if (!existsSync(dirPath)) {
     mkdirSync(dirPath, { recursive: true });
   }
-  const logFileStream = createWriteStream(logPath, { flags: 'a' });
+  const logFileStream: WriteStream = createWriteStream(logPath, { flags: 'a' });
 
   console.log("Executing Unity build.");
   return new Promise((resolve, reject) => {
@@ -182,7 +190,7 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
         console.log('Unity build completed successfully.');
       }
       logFileStream.end();
-      resolve(code);
+      resolve(code ?? 1);
     });
 
     process.on('error', (error) => {
