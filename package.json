@@ -1,7 +1,7 @@
 {
-  "name": "build-unity-project-action",
-  "version": "2.0.0",
-  "description": "Used for building an Unity project using a specific installed version. Supports cross-platform.",
+  "name": "execute-unity-action",
+  "version": "3.0.0",
+  "description": "Used for executing an Unity project using a specific installed version. Supports cross-platform.",
   "author": "Neo Chen",
   "license": "MIT",
   "keywords": [

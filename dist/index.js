@@ -8,18 +8,17 @@ async function main() {
     try {
         const unityInstallDir = getUnityInstallDir(process.env.unity_install_dir);
         const projectPath = process.env.project_path ?? process.cwd();
-        const logPath = process.env.log_path ?? 'Build/Releases/build_output.log';
-        const buildMethod = process.env.build_method ?? '';
-        const customOptions = process.env.custom_options ?? '';
-        console.log(`Unity project path used: ${projectPath}`);
+        const logPath = process.env.log_path ?? 'unity_output.log';
+        const customArgs = process.env.custom_args ?? '';
         process.chdir(projectPath);
+        console.log(`Unity project path used: ${projectPath}`);
         const unityVer = getUnityVersion(projectPath);
         console.log(`Unity version used: ${unityVer}`);
         const unityExecutable = getUnityExecutable(unityInstallDir, unityVer) ?? '';
-        console.log(`Unity Executable: ${unityExecutable}`);
-        const args = getBuildArguments(projectPath, buildMethod, customOptions);
-        console.log("Arguments:", args.join(" "));
-        const result = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
+        console.log(`Unity executable: ${unityExecutable}`);
+        const cliArgs = getCommandLineArguments(projectPath, customArgs);
+        console.log(`Command line arguments: ${cliArgs.join(" ")}`);
+        const result = await executeUnity(unityExecutable, cliArgs, projectPath, logPath);
         process.exit(result);
     }
     catch (error) {
@@ -126,15 +125,12 @@ function findUnityExecutable(unityDir, executableName) {
     }
     return undefined;
 }
-function getBuildArguments(projectPath, executeMethod, customOptions) {
+function getCommandLineArguments(projectPath, customArgs) {
     const args = [
-        "-quit",
-        "-batchmode",
         "-logFile -",
         `-projectPath ${projectPath}`,
-        `-executeMethod ${executeMethod}`
     ];
-    const tokens = customOptions ? customOptions.split(" ") : [];
+    const tokens = customArgs ? customArgs.split(" ") : [];
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token.startsWith("-")) {
@@ -144,7 +140,7 @@ function getBuildArguments(projectPath, executeMethod, customOptions) {
     }
     return args;
 }
-function executeUnityBuild(executable, args, projectPath, logPath) {
+function executeUnity(executable, args, projectPath, logPath) {
     logPath = (0, path_1.join)(projectPath, logPath);
     console.log(`Creating log file. Path: ${logPath}`);
     const dirPath = (0, path_1.dirname)(logPath);
@@ -152,7 +148,7 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
         (0, fs_1.mkdirSync)(dirPath, { recursive: true });
     }
     const logFileStream = (0, fs_1.createWriteStream)(logPath, { flags: 'a' });
-    console.log("Executing Unity build.");
+    console.log("Executing Unity.");
     return new Promise((resolve, reject) => {
         const process = (0, child_process_1.spawn)(`"${executable}"`, args, { cwd: projectPath, shell: true });
         process.stdout.on('data', (data) => {
@@ -170,7 +166,7 @@ function executeUnityBuild(executable, args, projectPath, logPath) {
                 console.error(`Process exited with code: ${code}`);
             }
             else {
-                console.log('Unity build completed successfully.');
+                console.log('Execute Unity successfully.');
             }
             logFileStream.end();
             resolve(code ?? 1);

@@ -7,23 +7,22 @@ async function main() {
   try {
     const unityInstallDir: string = getUnityInstallDir(process.env.unity_install_dir);
     const projectPath: string = process.env.project_path ?? process.cwd();
-    const logPath: string = process.env.log_path ?? 'Build/Releases/build_output.log';
-    const buildMethod: string = process.env.build_method ?? '';
-    const customOptions = process.env.custom_options ?? '';
+    const logPath: string = process.env.log_path ?? 'unity_output.log';
+    const customArgs = process.env.custom_args ?? '';
 
-    console.log(`Unity project path used: ${projectPath}`);
     process.chdir(projectPath);
+    console.log(`Unity project path used: ${projectPath}`);
 
     const unityVer: string = getUnityVersion(projectPath);
     console.log(`Unity version used: ${unityVer}`);
 
     const unityExecutable: string = getUnityExecutable(unityInstallDir, unityVer) ?? '';
-    console.log(`Unity Executable: ${unityExecutable}`);
+    console.log(`Unity executable: ${unityExecutable}`);
 
-    const args: readonly string[] = getBuildArguments(projectPath, buildMethod, customOptions);
-    console.log("Arguments:", args.join(" "));
+    const cliArgs: readonly string[] = getCommandLineArguments(projectPath, customArgs);
+    console.log(`Command line arguments: ${cliArgs.join(" ")}`);
 
-    const result: number = await executeUnityBuild(unityExecutable, args, projectPath, logPath);
+    const result: number = await executeUnity(unityExecutable, cliArgs, projectPath, logPath);
     process.exit(result);
   } catch (error) {
     if (error instanceof Error) {
@@ -137,16 +136,12 @@ function findUnityExecutable(unityDir: string, executableName: string): string |
   return undefined;
 }
 
-function getBuildArguments(projectPath: string, executeMethod: string, customOptions: string) {
+function getCommandLineArguments(projectPath: string, customArgs: string) {
   const args: string[] = [
-    "-quit",
-    "-batchmode",
     "-logFile -",
     `-projectPath ${projectPath}`,
-    `-executeMethod ${executeMethod}`
   ];
-
-  const tokens: string[] = customOptions ? customOptions.split(" ") : [];
+  const tokens: string[] = customArgs ? customArgs.split(" ") : [];
   for (let i = 0; i < tokens.length; i++) {
     const token: string = tokens[i];
     if (token.startsWith("-")) {
@@ -157,7 +152,7 @@ function getBuildArguments(projectPath: string, executeMethod: string, customOpt
   return args;
 }
 
-function executeUnityBuild(executable: string, args: readonly string[] | undefined, projectPath: string, logPath: string): Promise<number> {
+function executeUnity(executable: string, args: readonly string[] | undefined, projectPath: string, logPath: string): Promise<number> {
   logPath = join(projectPath, logPath);
 
   console.log(`Creating log file. Path: ${logPath}`);
@@ -167,7 +162,7 @@ function executeUnityBuild(executable: string, args: readonly string[] | undefin
   }
   const logFileStream: WriteStream = createWriteStream(logPath, { flags: 'a' });
 
-  console.log("Executing Unity build.");
+  console.log("Executing Unity.");
   return new Promise((resolve, reject) => {
     const process = spawn(`"${executable}"`, args, { cwd: projectPath, shell: true });
 
@@ -187,7 +182,7 @@ function executeUnityBuild(executable: string, args: readonly string[] | undefin
       if (code !== 0) {
         console.error(`Process exited with code: ${code}`);
       } else {
-        console.log('Unity build completed successfully.');
+        console.log('Execute Unity successfully.');
       }
       logFileStream.end();
       resolve(code ?? 1);
